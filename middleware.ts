@@ -19,18 +19,14 @@ export async function middleware(request: NextRequest) {
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
           supabaseResponse = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           })
           supabaseResponse.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
           supabaseResponse = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           })
           supabaseResponse.cookies.set({ name, value: '', ...options })
         },
@@ -41,27 +37,40 @@ export async function middleware(request: NextRequest) {
   // Refreshes session and validates user (do not remove)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // --- Protected Routes Logic ---
-  const isLoginPage = request.nextUrl.pathname === '/login'
-  const isAdminRoot = request.nextUrl.pathname.startsWith('/admin')
+  const { pathname } = request.nextUrl
+  const isLoginPage = pathname === '/login'
+  const isAdminRoute = pathname.startsWith('/admin')
 
-  if (isAdminRoot) {
+  // Hardcoded admin email always has full access
+  const isHardcodedAdmin = !!(
+    process.env.ADMIN_EMAIL &&
+    user?.email === process.env.ADMIN_EMAIL
+  )
+
+  if (isAdminRoute) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    if (!isHardcodedAdmin) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
 
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'staff')) {
-      return NextResponse.redirect(new URL('/', request.url))
+      if (!profile || (profile.role !== 'admin' && profile.role !== 'staff')) {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
     }
   }
 
+  // Redirect logged-in admins away from login page
   if (isLoginPage && user) {
+    if (isHardcodedAdmin) {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
