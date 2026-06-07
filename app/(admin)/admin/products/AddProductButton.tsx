@@ -39,11 +39,11 @@ export function AddProductButton() {
               setLoading(true)
               try {
                 await addProduct(formData)
-                setIsOpen(false)
               } catch (e) {
-                alert(e instanceof Error ? e.message : 'Something went wrong')
-              } finally {
+                // Re-throw Next.js redirect/not-found errors so the router handles them
+                if (e && typeof e === 'object' && 'digest' in e) throw e
                 setLoading(false)
+                alert(e instanceof Error ? e.message : 'Something went wrong')
               }
             }} className="p-8 space-y-6">
               <div className="grid grid-cols-2 gap-6">

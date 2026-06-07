@@ -24,7 +24,7 @@ export default async function AdminInventoryPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight text-white mb-1">Inventory Control</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Inventory Control</h1>
           <p className="text-slate-400 text-sm">Monitor stock levels across all your products and warehouses.</p>
         </div>
         <div className="flex items-center gap-2">
