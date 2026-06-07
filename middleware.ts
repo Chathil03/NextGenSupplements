@@ -1,10 +1,11 @@
-import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const { nextUrl } = request
   let supabaseResponse = NextResponse.next({
-    request: { headers: request.headers },
+    request: {
+      headers: request.headers,
+    },
   })
 
   const supabase = createServerClient(
@@ -18,14 +19,18 @@ export async function middleware(request: NextRequest) {
         set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
           supabaseResponse = NextResponse.next({
-            request: { headers: request.headers },
+            request: {
+              headers: request.headers,
+            },
           })
           supabaseResponse.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
           supabaseResponse = NextResponse.next({
-            request: { headers: request.headers },
+            request: {
+              headers: request.headers,
+            },
           })
           supabaseResponse.cookies.set({ name, value: '', ...options })
         },
@@ -36,8 +41,11 @@ export async function middleware(request: NextRequest) {
   // Refreshes session and validates user (do not remove)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect admin routes
-  if (nextUrl.pathname.startsWith('/admin')) {
+  // --- Protected Routes Logic ---
+  const isLoginPage = request.nextUrl.pathname === '/login'
+  const isAdminRoot = request.nextUrl.pathname.startsWith('/admin')
+
+  if (isAdminRoot) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -53,8 +61,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect logged-in admins/staff away from login page
-  if (nextUrl.pathname === '/login' && user) {
+  if (isLoginPage && user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')

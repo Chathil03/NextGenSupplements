@@ -52,7 +52,7 @@ export default function Footer() {
             {shopLinks.map((item) => (
               <li key={item}>
                 <Link
-                  href="#"
+                  href={`/shop?category=${item}`}
                   className="text-secondary-fixed-dim hover:text-primary-fixed transition-colors"
                 >
                   {item}
